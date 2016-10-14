@@ -65,10 +65,12 @@ func OpenFifo(ctx context.Context, fn string, flag int, perm os.FileMode) (io.Re
 	}
 
 	wg := leakCheckWg
+	if wg != nil {
+		wg.Add(2)
+	}
 
 	go func() {
 		if wg != nil {
-			wg.Add(1)
 			defer wg.Done()
 		}
 		select {
@@ -80,7 +82,6 @@ func OpenFifo(ctx context.Context, fn string, flag int, perm os.FileMode) (io.Re
 	}()
 	go func() {
 		if wg != nil {
-			wg.Add(1)
 			defer wg.Done()
 		}
 		var file *os.File
