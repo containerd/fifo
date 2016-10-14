@@ -105,7 +105,7 @@ func TestFifoReadWrite(t *testing.T) {
 	assert.Equal(t, string(b[:n]), "baz")
 	select {
 	case <-written:
-	default:
+	case <-time.After(500 * time.Millisecond):
 		t.Fatal("content should have been written")
 	}
 
@@ -240,7 +240,7 @@ func TestFifoORDWR(t *testing.T) {
 		leakCheckWg = nil
 	}()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	f, err := OpenFifo(ctx, filepath.Join(tmpdir, "f0"), syscall.O_RDWR|syscall.O_CREAT, 0600)
@@ -307,7 +307,7 @@ func TestFifoORDWR(t *testing.T) {
 }
 
 func checkWgDone(wg *sync.WaitGroup) error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 	done := make(chan struct{})
 	go func() {
