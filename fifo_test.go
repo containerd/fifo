@@ -158,6 +158,13 @@ func TestFifoCancelOneSide(t *testing.T) {
 	cerr := f.Close()
 	assert.Error(t, cerr)
 	assert.Contains(t, cerr.Error(), "closed before opening")
+
+	select {
+	case <-read:
+	case <-time.After(time.Second):
+		t.Fatal("read should have unblocked")
+	}
+
 	assert.EqualError(t, err, "reading from a closed fifo")
 
 	assert.NoError(t, checkWgDone(leakCheckWg))
