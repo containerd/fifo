@@ -142,7 +142,7 @@ func (f *fifo) Read(b []byte) (int, error) {
 	}
 }
 
-// Write from byte array to a buffer.
+// Write from byte array to a fifo.
 func (f *fifo) Write(b []byte) (int, error) {
 	if f.flag&(syscall.O_WRONLY|syscall.O_RDWR) == 0 {
 		return 0, errors.New("writing to read-only fifo")
