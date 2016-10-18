@@ -188,19 +188,26 @@ func (f *fifo) Close() error {
 					reverseMode = syscall.O_RDONLY
 				}
 				fn, err := f.handle.Path()
-				if err != nil {
-					// Path has become invalid. We will leak a goroutine.
-					// This case should not happen in linux.
-					f.closedOnce.Do(func() {
-						f.err = err
-						close(f.closed)
-					})
-					<-f.closed
-					break
-				}
-				f, err := os.OpenFile(fn, reverseMode|syscall.O_NONBLOCK, 0)
-				if err == nil {
-					f.Close()
+				// if Close() is called concurrently(shouldn't) it may cause error
+				// because handle is closed
+				select {
+				case <-f.closed:
+				default:
+					if err != nil {
+						// Path has become invalid. We will leak a goroutine.
+						// This case should not happen in linux.
+						f.closedOnce.Do(func() {
+							f.err = err
+							close(f.closed)
+						})
+						<-f.closed
+						break
+					}
+					f, err := os.OpenFile(fn, reverseMode|syscall.O_NONBLOCK, 0)
+					if err == nil {
+						f.Close()
+					}
+					runtime.Gosched()
 				}
 			}
 		}
