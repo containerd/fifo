@@ -97,7 +97,7 @@ func OpenFifo(ctx context.Context, fn string, flag int, perm os.FileMode) (io.Re
 				case <-ctx.Done():
 					err = ctx.Err()
 				default:
-					err = errors.Errorf("fifo %v was closed before opening", fn)
+					err = errors.Errorf("fifo %v was closed before opening", h.Name())
 				}
 				if file != nil {
 					file.Close()
