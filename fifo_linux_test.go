@@ -49,8 +49,7 @@ func TestFifoCloseAfterRm(t *testing.T) {
 	}
 
 	err = f.Close()
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "was closed before opening")
+	assert.NoError(t, err)
 
 	select {
 	case err := <-cerr:

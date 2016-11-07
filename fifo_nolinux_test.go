@@ -46,7 +46,7 @@ func TestFifoCloseAfterRm(t *testing.T) {
 	}
 
 	err = f.Close()
-	assert.Error(t, err)
+	assert.NoError(t, err)
 
 	select {
 	case err := <-cerr:

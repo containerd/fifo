@@ -156,8 +156,7 @@ func TestFifoCancelOneSide(t *testing.T) {
 	}
 
 	cerr := f.Close()
-	assert.Error(t, cerr)
-	assert.Contains(t, cerr.Error(), "closed before opening")
+	assert.NoError(t, cerr)
 
 	select {
 	case <-read:
