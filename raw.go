@@ -11,48 +11,35 @@ import (
 // SyscallConn provides raw access to the fifo's underlying filedescrptor.
 // See syscall.Conn for guarentees provided by this interface.
 func (f *fifo) SyscallConn() (syscall.RawConn, error) {
+	// deterministic check for closed
 	select {
-	case <-f.opened:
-		return newRawConn(f)
+	case <-f.closed:
+		return nil, errors.New("fifo closed")
 	default:
 	}
 
-	if !f.block {
-		rc := &rawConn{f: f, ready: make(chan struct{})}
-		go func() {
-			select {
-			case <-f.closed:
-				return
-			case <-f.opened:
-				rc.raw, rc.err = f.file.SyscallConn()
-				close(rc.ready)
-			}
-		}()
-
-		return rc, nil
-	}
-
 	select {
-	case <-f.opened:
-		return newRawConn(f)
 	case <-f.closed:
 		return nil, errors.New("fifo closed")
-	}
-}
-
-// newRawConn creates a new syscall.RawConn from a fifo
-//
-// Note that this assumes the fifo is open
-// It is recommended to only call this through `fifo.SyscallConn`
-func newRawConn(f *fifo) (syscall.RawConn, error) {
-	raw, err := f.file.SyscallConn()
-	if err != nil {
-		return nil, err
+	case <-f.opened:
+		return f.file.SyscallConn()
+	default:
 	}
 
-	ready := make(chan struct{})
-	close(ready)
-	return &rawConn{f: f, raw: raw, ready: ready}, nil
+	// Not opened and not closed, this means open is non-blocking AND it's not open yet
+	// Use rawConn to deal with non-blocking open.
+	rc := &rawConn{f: f, ready: make(chan struct{})}
+	go func() {
+		select {
+		case <-f.closed:
+			return
+		case <-f.opened:
+			rc.raw, rc.err = f.file.SyscallConn()
+			close(rc.ready)
+		}
+	}()
+
+	return rc, nil
 }
 
 type rawConn struct {

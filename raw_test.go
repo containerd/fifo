@@ -111,7 +111,9 @@ func TestRawCloseError(t *testing.T) {
 
 		f, err := OpenFifo(ctx, filepath.Join(tmpdir, path.Base(t.Name())), syscall.O_RDWR|syscall.O_CREAT, 0600)
 		assert.NoError(t, err)
+
 		f.Close()
+
 		makeRawConn(t, f, true)
 	})
 
@@ -140,6 +142,8 @@ func makeRawConn(t *testing.T, fifo io.ReadWriteCloser, expectError bool) syscal
 	raw, err := sc.SyscallConn()
 	if !expectError {
 		assert.NoError(t, err)
+	} else {
+		assert.Error(t, err)
 	}
 
 	return raw

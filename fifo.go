@@ -29,7 +29,6 @@ import (
 
 type fifo struct {
 	flag        int
-	block       bool
 	opened      chan struct{}
 	closed      chan struct{}
 	closing     chan struct{}
@@ -76,7 +75,6 @@ func OpenFifo(ctx context.Context, fn string, flag int, perm os.FileMode) (io.Re
 	f := &fifo{
 		handle:  h,
 		flag:    flag,
-		block:   block,
 		opened:  make(chan struct{}),
 		closed:  make(chan struct{}),
 		closing: make(chan struct{}),
