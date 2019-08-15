@@ -149,6 +149,52 @@ func TestRawCloseError(t *testing.T) {
 		assert.Error(t, raw.Write(dummy))
 		assert.Error(t, raw.Read(dummy))
 	})
+
+	t.Run("NonBlockRawOpsAfterClose", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+		defer cancel()
+		dummy := func(uintptr) bool { return true }
+		r, err := OpenFifo(ctx, filepath.Join(tmpdir, path.Base(t.Name())), syscall.O_RDONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0600)
+		assert.NoError(t, err)
+		defer r.Close()
+		rawR := makeRawConn(t, r, false)
+		r.Close()
+
+		assert.Equal(t, ErrCtrlClosed, rawR.Control(func(uintptr) {}))
+		assert.Equal(t, ErrReadClosed, rawR.Read(dummy))
+
+		w, err := OpenFifo(ctx, filepath.Join(tmpdir, path.Base(t.Name())), syscall.O_WRONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0600)
+		assert.NoError(t, err)
+		defer w.Close()
+		rawW := makeRawConn(t, w, false)
+		w.Close()
+
+		assert.Equal(t, ErrCtrlClosed, rawW.Control(func(uintptr) {}))
+		assert.Equal(t, ErrWriteClosed, rawW.Write(dummy))
+	})
+}
+
+func TestRawWrongRdWrError(t *testing.T) {
+	tmpdir, err := ioutil.TempDir("", "fifos")
+	assert.NoError(t, err)
+	defer os.RemoveAll(tmpdir)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+	dummy := func(uintptr) bool { return true }
+	r, err := OpenFifo(ctx, filepath.Join(tmpdir, path.Base(t.Name())), syscall.O_RDONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0600)
+	assert.NoError(t, err)
+	defer r.Close()
+	rawR := makeRawConn(t, r, false)
+
+	assert.Equal(t, ErrWrToRDONLY, rawR.Write(dummy))
+
+	w, err := OpenFifo(ctx, filepath.Join(tmpdir, path.Base(t.Name())), syscall.O_WRONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0600)
+	assert.NoError(t, err)
+	defer w.Close()
+	rawW := makeRawConn(t, w, false)
+
+	assert.Equal(t, ErrRdFrmWRONLY, rawW.Read(dummy))
 }
 
 func makeRawConn(t *testing.T, fifo io.ReadWriteCloser, expectError bool) syscall.RawConn {

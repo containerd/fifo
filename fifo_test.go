@@ -54,7 +54,7 @@ func TestFifoCancel(t *testing.T) {
 	b := make([]byte, 32)
 	n, err := f.Read(b)
 	assert.Equal(t, n, 0)
-	assert.EqualError(t, err, "reading from a closed fifo")
+	assert.Equal(t, err, ErrReadClosed)
 
 	select {
 	case <-ctx.Done():
@@ -180,7 +180,7 @@ func TestFifoCancelOneSide(t *testing.T) {
 		t.Fatal("read should have unblocked")
 	}
 
-	assert.EqualError(t, err, "reading from a closed fifo")
+	assert.Equal(t, err, ErrReadClosed)
 
 	assert.NoError(t, checkWgDone(leakCheckWg))
 }
@@ -326,6 +326,54 @@ func TestFifoORDWR(t *testing.T) {
 	assert.EqualError(t, err, io.EOF.Error())
 
 	assert.NoError(t, checkWgDone(leakCheckWg))
+}
+
+func TestFifoCloseError(t *testing.T) {
+	tmpdir, err := ioutil.TempDir("", "fifos")
+	assert.NoError(t, err)
+	defer os.RemoveAll(tmpdir)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	w, err := OpenFifo(ctx, filepath.Join(tmpdir, t.Name()), syscall.O_WRONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0600)
+	assert.NoError(t, err)
+	w.Close()
+
+	data := []byte("hello world!")
+	_, err = w.Write(data)
+	assert.Equal(t, ErrWriteClosed, err)
+
+	r, err := OpenFifo(ctx, filepath.Join(tmpdir, t.Name()), syscall.O_RDONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0600)
+	assert.NoError(t, err)
+	r.Close()
+
+	buf := make([]byte, len(data))
+	_, err = r.Read(buf)
+	assert.Equal(t, ErrReadClosed, err)
+}
+
+func TestFifoWrongRdWrError(t *testing.T) {
+	tmpdir, err := ioutil.TempDir("", "fifos")
+	assert.NoError(t, err)
+	defer os.RemoveAll(tmpdir)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	r, err := OpenFifo(ctx, filepath.Join(tmpdir, t.Name()), syscall.O_RDONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0600)
+	assert.NoError(t, err)
+
+	data := []byte("hello world!")
+	_, err = r.Write(data)
+	assert.Equal(t, ErrWrToRDONLY, err)
+
+	w, err := OpenFifo(ctx, filepath.Join(tmpdir, t.Name()), syscall.O_WRONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0600)
+	assert.NoError(t, err)
+
+	buf := make([]byte, len(data))
+	_, err = w.Read(buf)
+	assert.Equal(t, ErrRdFrmWRONLY, err)
 }
 
 func checkWgDone(wg *sync.WaitGroup) error {
