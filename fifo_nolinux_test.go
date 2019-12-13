@@ -26,8 +26,8 @@ import (
 	"testing"
 	"time"
 
+	"context"
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/net/context"
 )
 
 func TestFifoCloseAfterRm(t *testing.T) {
