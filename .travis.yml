@@ -5,11 +5,12 @@ go:
 
 go_import_path: github.com/containerd/fifo
 
+env:
+  - GO111MODULE=on
+
 install:
-  - cd $GOPATH/src/github.com/containerd/fifo
-  - GO111MODULE="on" go mod vendor
-  - go get -u github.com/vbatts/git-validation
-  - go get -u github.com/kunalkushwaha/ltag
+  - pushd ..; go get -u github.com/vbatts/git-validation; popd
+  - pushd ..; go get -u github.com/kunalkushwaha/ltag; popd
 
 before_script:
   - pushd ..; git clone https://github.com/containerd/project; popd
@@ -17,10 +18,4 @@ before_script:
 script:
   - DCO_VERBOSITY=-q ../project/script/validate/dco
   - ../project/script/validate/fileheader ../project/
-  - make deps
-  - make fmt
-  - make vet
   - make test
-
-after_success:
-    - bash <(curl -s https://codecov.io/bash)
