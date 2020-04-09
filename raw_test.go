@@ -20,6 +20,7 @@ package fifo
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"io/ioutil"
 	"os"
@@ -29,7 +30,6 @@ import (
 	"testing"
 	"time"
 
-	"context"
 	"github.com/stretchr/testify/assert"
 )
 
