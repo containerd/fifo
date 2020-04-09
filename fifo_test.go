@@ -17,6 +17,7 @@
 package fifo
 
 import (
+	"context"
 	"io"
 	"io/ioutil"
 	"os"
@@ -26,7 +27,6 @@ import (
 	"testing"
 	"time"
 
-	"context"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -322,7 +322,7 @@ func TestFifoORDWR(t *testing.T) {
 	err = f.Close()
 	assert.NoError(t, err)
 
-	n, err = r2.Read(b)
+	_, err = r2.Read(b)
 	assert.EqualError(t, err, io.EOF.Error())
 
 	assert.NoError(t, checkWgDone(leakCheckWg))
