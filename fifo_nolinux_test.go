@@ -1,4 +1,4 @@
-// +build !linux
+// +build !linux,!windows
 
 /*
    Copyright The containerd Authors.
@@ -19,6 +19,7 @@
 package fifo
 
 import (
+	"context"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -26,7 +27,6 @@ import (
 	"testing"
 	"time"
 
-	"context"
 	"github.com/stretchr/testify/assert"
 )
 
