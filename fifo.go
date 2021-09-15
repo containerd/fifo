@@ -206,6 +206,10 @@ func (f *fifo) Write(b []byte) (int, error) {
 // before open(2) has returned and fifo was never opened.
 func (f *fifo) Close() (retErr error) {
 	for {
+		if f == nil {
+			return
+		}
+
 		select {
 		case <-f.closed:
 			f.handle.Close()
