@@ -1,3 +1,4 @@
+//go:build !windows
 // +build !windows
 
 /*
@@ -353,6 +354,96 @@ func TestFifoCloseError(t *testing.T) {
 	buf := make([]byte, len(data))
 	_, err = r.Read(buf)
 	assert.Equal(t, ErrReadClosed, err)
+}
+
+func TestFifoCloseWhileReading(t *testing.T) {
+	tmpdir, err := ioutil.TempDir("", "fifos")
+	assert.NoError(t, err)
+	defer os.RemoveAll(tmpdir)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	r, err := OpenFifo(ctx, filepath.Join(tmpdir, t.Name()), syscall.O_RDONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0600)
+	assert.NoError(t, err)
+
+	read := make(chan struct{})
+	readErr := make(chan error)
+
+	go func() {
+		buf := make([]byte, 32)
+		_, err := r.Read(buf)
+
+		if err != nil {
+			readErr <- err
+			return
+		}
+
+		close(read)
+
+	}()
+
+	time.Sleep(500 * time.Millisecond)
+	r.Close()
+
+	select {
+	case <-read:
+		t.Fatal("Read should not succeed")
+	case err := <-readErr:
+		assert.Equal(t, ErrReadClosed, err)
+	case <-time.After(500 * time.Millisecond):
+		t.Fatal("Read should not be blocked")
+	}
+}
+
+func TestFifoCloseWhileReadingAndWriting(t *testing.T) {
+	tmpdir, err := ioutil.TempDir("", "fifos")
+	assert.NoError(t, err)
+	defer os.RemoveAll(tmpdir)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	r, err := OpenFifo(ctx, filepath.Join(tmpdir, t.Name()), syscall.O_RDONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0600)
+	assert.NoError(t, err)
+
+	w, err := OpenFifo(ctx, filepath.Join(tmpdir, t.Name()), syscall.O_WRONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0)
+	assert.NoError(t, err)
+
+	read := make(chan struct{})
+	readErr := make(chan error)
+	wBuffer := []byte("foo")
+
+	go func() {
+		buf := make([]byte, 32)
+		_, err := r.Read(buf)
+
+		if err != nil {
+			readErr <- err
+			return
+		}
+
+		close(read)
+	}()
+
+	time.Sleep(500 * time.Millisecond)
+
+	// Close the reader and then write in the writer.
+	// The reader thread should return an error.
+	r.Close()
+
+	// The write should fail, the reader end of the pipe is closed.
+	_, err = w.Write(wBuffer)
+	assert.Error(t, err)
+
+	select {
+	case <-read:
+		t.Fatal("Read should not succeed")
+	case err := <-readErr:
+		assert.Error(t, err)
+	case <-time.After(500 * time.Millisecond):
+		t.Fatal("Read should not be blocked")
+	}
 }
 
 func TestFifoWrongRdWrError(t *testing.T) {
