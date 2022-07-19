@@ -18,8 +18,10 @@ jobs:
       with:
         path: src/github.com/containerd/fifo
         fetch-depth: 25
-
-    - uses: containerd/project-checks@v1
+    - uses: actions/setup-go@v3
+      with:
+        go-version: 1.18.x
+    - uses: containerd/project-checks@v1.0.2
       with:
         working-directory: src/github.com/containerd/fifo
 
@@ -30,7 +32,7 @@ jobs:
 
     strategy:
       matrix:
-        go-version: [1.16.x]
+        go-version: [1.18.x]
         os: [ubuntu-18.04, macos-10.15, windows-2019]
 
     steps:
@@ -44,9 +46,9 @@ jobs:
           echo "GOPATH=${{ github.workspace }}" >> $GITHUB_ENV
           echo "${{ github.workspace }}/bin" >> $GITHUB_PATH
 
-      - uses: golangci/golangci-lint-action@v2
+      - uses: golangci/golangci-lint-action@v3.2.0
         with:
-          version: v1.29
+          version: v1.47.1
           working-directory: src/github.com/containerd/fifo
 
   tests:
@@ -61,7 +63,7 @@ jobs:
 
       - uses: actions/setup-go@v2
         with:
-          go-version: 1.16.x
+          go-version: 1.18.x
 
       - run: make test
         working-directory: src/github.com/containerd/fifo
