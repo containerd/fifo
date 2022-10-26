@@ -23,7 +23,6 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -35,7 +34,7 @@ import (
 )
 
 func TestRawReadWrite(t *testing.T) {
-	tmpdir, err := ioutil.TempDir("", "fifos")
+	tmpdir, err := os.MkdirTemp("", "fifos")
 	assert.NoError(t, err)
 	defer os.RemoveAll(tmpdir)
 
@@ -63,7 +62,7 @@ func TestRawReadWrite(t *testing.T) {
 }
 
 func TestRawWriteUserRead(t *testing.T) {
-	tmpdir, err := ioutil.TempDir("", "fifos")
+	tmpdir, err := os.MkdirTemp("", "fifos")
 	assert.NoError(t, err)
 	defer os.RemoveAll(tmpdir)
 
@@ -90,7 +89,7 @@ func TestRawWriteUserRead(t *testing.T) {
 }
 
 func TestUserWriteRawRead(t *testing.T) {
-	tmpdir, err := ioutil.TempDir("", "fifos")
+	tmpdir, err := os.MkdirTemp("", "fifos")
 	assert.NoError(t, err)
 	defer os.RemoveAll(tmpdir)
 
@@ -118,7 +117,7 @@ func TestUserWriteRawRead(t *testing.T) {
 }
 
 func TestRawCloseError(t *testing.T) {
-	tmpdir, err := ioutil.TempDir("", "fifos")
+	tmpdir, err := os.MkdirTemp("", "fifos")
 	assert.NoError(t, err)
 	defer os.RemoveAll(tmpdir)
 
@@ -176,7 +175,7 @@ func TestRawCloseError(t *testing.T) {
 }
 
 func TestRawWrongRdWrError(t *testing.T) {
-	tmpdir, err := ioutil.TempDir("", "fifos")
+	tmpdir, err := os.MkdirTemp("", "fifos")
 	assert.NoError(t, err)
 	defer os.RemoveAll(tmpdir)
 
