@@ -22,7 +22,6 @@ package fifo
 import (
 	"context"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sync"
@@ -34,7 +33,7 @@ import (
 )
 
 func TestFifoCancel(t *testing.T) {
-	tmpdir, err := ioutil.TempDir("", "fifos")
+	tmpdir, err := os.MkdirTemp("", "fifos")
 	assert.NoError(t, err)
 	defer os.RemoveAll(tmpdir)
 
@@ -68,7 +67,7 @@ func TestFifoCancel(t *testing.T) {
 }
 
 func TestFifoReadWrite(t *testing.T) {
-	tmpdir, err := ioutil.TempDir("", "fifos")
+	tmpdir, err := os.MkdirTemp("", "fifos")
 	assert.NoError(t, err)
 	defer os.RemoveAll(tmpdir)
 
@@ -146,7 +145,7 @@ func TestFifoReadWrite(t *testing.T) {
 }
 
 func TestFifoCancelOneSide(t *testing.T) {
-	tmpdir, err := ioutil.TempDir("", "fifos")
+	tmpdir, err := os.MkdirTemp("", "fifos")
 	assert.NoError(t, err)
 	defer os.RemoveAll(tmpdir)
 
@@ -189,7 +188,7 @@ func TestFifoCancelOneSide(t *testing.T) {
 }
 
 func TestFifoBlocking(t *testing.T) {
-	tmpdir, err := ioutil.TempDir("", "fifos")
+	tmpdir, err := os.MkdirTemp("", "fifos")
 	assert.NoError(t, err)
 	defer os.RemoveAll(tmpdir)
 
@@ -256,7 +255,7 @@ func TestFifoBlocking(t *testing.T) {
 }
 
 func TestFifoORDWR(t *testing.T) {
-	tmpdir, err := ioutil.TempDir("", "fifos")
+	tmpdir, err := os.MkdirTemp("", "fifos")
 	assert.NoError(t, err)
 	defer os.RemoveAll(tmpdir)
 
@@ -332,7 +331,7 @@ func TestFifoORDWR(t *testing.T) {
 }
 
 func TestFifoCloseError(t *testing.T) {
-	tmpdir, err := ioutil.TempDir("", "fifos")
+	tmpdir, err := os.MkdirTemp("", "fifos")
 	assert.NoError(t, err)
 	defer os.RemoveAll(tmpdir)
 
@@ -357,7 +356,7 @@ func TestFifoCloseError(t *testing.T) {
 }
 
 func TestFifoCloseWhileReading(t *testing.T) {
-	tmpdir, err := ioutil.TempDir("", "fifos")
+	tmpdir, err := os.MkdirTemp("", "fifos")
 	assert.NoError(t, err)
 	defer os.RemoveAll(tmpdir)
 
@@ -397,7 +396,7 @@ func TestFifoCloseWhileReading(t *testing.T) {
 }
 
 func TestFifoCloseWhileReadingAndWriting(t *testing.T) {
-	tmpdir, err := ioutil.TempDir("", "fifos")
+	tmpdir, err := os.MkdirTemp("", "fifos")
 	assert.NoError(t, err)
 	defer os.RemoveAll(tmpdir)
 
@@ -447,7 +446,7 @@ func TestFifoCloseWhileReadingAndWriting(t *testing.T) {
 }
 
 func TestFifoWrongRdWrError(t *testing.T) {
-	tmpdir, err := ioutil.TempDir("", "fifos")
+	tmpdir, err := os.MkdirTemp("", "fifos")
 	assert.NoError(t, err)
 	defer os.RemoveAll(tmpdir)
 

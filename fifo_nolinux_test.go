@@ -21,7 +21,6 @@ package fifo
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"syscall"
@@ -32,7 +31,7 @@ import (
 )
 
 func TestFifoCloseAfterRm(t *testing.T) {
-	tmpdir, err := ioutil.TempDir("", "fifos")
+	tmpdir, err := os.MkdirTemp("", "fifos")
 	assert.NoError(t, err)
 	defer os.RemoveAll(tmpdir)
 
