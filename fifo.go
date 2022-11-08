@@ -71,7 +71,13 @@ func OpenFifoDup2(ctx context.Context, fn string, flag int, perm os.FileMode, fd
 //     fifo isn't open. read/write will be connected after the actual fifo is
 //     open or after fifo is closed.
 func OpenFifo(ctx context.Context, fn string, flag int, perm os.FileMode) (io.ReadWriteCloser, error) {
-	return openFifo(ctx, fn, flag, perm)
+	fifo, err := openFifo(ctx, fn, flag, perm)
+	if fifo == nil {
+		// Do not return a non-nil ReadWriteCloser((*fifo)(nil)) value
+		// as that can confuse callers.
+		return nil, err
+	}
+	return fifo, err
 }
 
 func openFifo(ctx context.Context, fn string, flag int, perm os.FileMode) (*fifo, error) {

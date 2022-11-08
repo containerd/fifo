@@ -42,7 +42,8 @@ func TestFifoCancel(t *testing.T) {
 		leakCheckWg = nil
 	}()
 
-	_, err = OpenFifo(context.Background(), filepath.Join(tmpdir, "f0"), syscall.O_RDONLY|syscall.O_NONBLOCK, 0600)
+	f, err := OpenFifo(context.Background(), filepath.Join(tmpdir, "f0"), syscall.O_RDONLY|syscall.O_NONBLOCK, 0600)
+	assert.Exactly(t, nil, f)
 	assert.NotNil(t, err)
 
 	assert.NoError(t, checkWgDone(leakCheckWg))
@@ -50,7 +51,7 @@ func TestFifoCancel(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 
-	f, err := OpenFifo(ctx, filepath.Join(tmpdir, "f0"), syscall.O_RDONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0600)
+	f, err = OpenFifo(ctx, filepath.Join(tmpdir, "f0"), syscall.O_RDONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0600)
 	assert.NoError(t, err)
 
 	b := make([]byte, 32)
@@ -200,7 +201,8 @@ func TestFifoBlocking(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	_, err = OpenFifo(ctx, filepath.Join(tmpdir, "f0"), syscall.O_RDONLY|syscall.O_CREAT, 0600)
+	f, err := OpenFifo(ctx, filepath.Join(tmpdir, "f0"), syscall.O_RDONLY|syscall.O_CREAT, 0600)
+	assert.Exactly(t, nil, f)
 	assert.EqualError(t, err, "context deadline exceeded")
 
 	select {
