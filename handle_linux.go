@@ -25,7 +25,7 @@ import (
 	"syscall"
 )
 
-//nolint:golint
+//nolint:revive
 const O_PATH = 010000000
 
 type handle struct {
