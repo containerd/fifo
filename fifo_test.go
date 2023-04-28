@@ -20,6 +20,7 @@ package fifo
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -30,6 +31,18 @@ import (
 
 	"github.com/stretchr/testify/assert"
 )
+
+func TestOpenNonNamedPipe(t *testing.T) {
+	tmpdir := t.TempDir()
+
+	normalFile := filepath.Join(tmpdir, "empty")
+	f, err := os.Create(normalFile)
+	assert.NoError(t, err)
+	f.Close()
+
+	_, err = OpenFifo(context.TODO(), normalFile, syscall.O_RDONLY|syscall.O_NONBLOCK, 0600)
+	assert.ErrorContains(t, err, fmt.Sprintf("file %v is not fifo", normalFile))
+}
 
 func TestFifoCancel(t *testing.T) {
 	tmpdir, err := os.MkdirTemp("", "fifos")
