@@ -497,3 +497,36 @@ func checkWgDone(wg *sync.WaitGroup) error {
 		return ctx.Err()
 	}
 }
+
+func TestFifoResize(t *testing.T) {
+	tmpdir, err := os.MkdirTemp("", "fifos")
+	assert.NoError(t, err)
+	defer os.RemoveAll(tmpdir)
+
+	leakCheckWg = &sync.WaitGroup{}
+	defer func() {
+		leakCheckWg = nil
+	}()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	r, err := OpenFifo(ctx, filepath.Join(tmpdir, "f0"), syscall.O_RDONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0600)
+	assert.NoError(t, err)
+
+	w, err := OpenFifo(ctx, filepath.Join(tmpdir, "f0"), syscall.O_WRONLY|syscall.O_NONBLOCK, 0)
+	assert.NoError(t, err)
+
+	size := 1024*1024
+	bytes := make([]byte, size)
+	for i := 0; i < size; i++ {
+		bytes[i] = byte(i % 256)
+	}
+	_, err = w.Write(bytes)
+	assert.NoError(t, err)
+
+	b := make([]byte, size)
+	_, err = r.Read(b[:size])
+	assert.NoError(t, err)
+	assert.Equal(t, b[:size], bytes)
+}
