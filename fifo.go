@@ -42,6 +42,12 @@ type fifo struct {
 	handle      *handle
 }
 
+const (
+	F_SETPIPE_SZ = 1031
+)
+
+const FIFO_SIZE = 1024 * 1024
+
 var leakCheckWg *sync.WaitGroup
 
 // OpenFifoDup2 is same as OpenFifo, but additionally creates a copy of the FIFO file descriptor with dup2 syscall.
@@ -163,6 +169,9 @@ func openFifo(ctx context.Context, fn string, flag int, perm os.FileMode) (*fifo
 			})
 			return
 		}
+		// Resize fifo to 1024K
+		// https://github.com/torvalds/linux/commit/ff9da691c0498ff81fdd014e7a0731dab2337dac
+		unix.FcntlInt(file.Fd(), F_SETPIPE_SZ, FIFO_SIZE)
 		f.file = file
 		close(f.opened)
 	}()
