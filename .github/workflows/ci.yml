@@ -18,7 +18,7 @@ jobs:
       with:
         path: src/github.com/containerd/fifo
         fetch-depth: 25
-    - uses: actions/setup-go@v3
+    - uses: actions/setup-go@v5
       with:
         go-version: 1.20.x
     - uses: containerd/project-checks@v1.1.0
@@ -39,6 +39,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           path: src/github.com/containerd/fifo
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
 
       - name: Set env
         shell: bash
@@ -60,8 +63,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           path: src/github.com/containerd/fifo
-
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v5
         with:
           go-version: 1.20.x
 
