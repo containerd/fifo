@@ -40,7 +40,7 @@ func TestOpenNonNamedPipe(t *testing.T) {
 	assert.NoError(t, err)
 	f.Close()
 
-	_, err = OpenFifo(context.TODO(), normalFile, syscall.O_RDONLY|syscall.O_NONBLOCK, 0600)
+	_, err = OpenFifo(context.TODO(), normalFile, syscall.O_RDONLY|syscall.O_NONBLOCK, 0o600)
 	assert.ErrorContains(t, err, fmt.Sprintf("file %v is not fifo", normalFile))
 }
 
@@ -54,7 +54,7 @@ func TestFifoCancel(t *testing.T) {
 		leakCheckWg = nil
 	}()
 
-	f, err := OpenFifo(context.Background(), filepath.Join(tmpdir, "f0"), syscall.O_RDONLY|syscall.O_NONBLOCK, 0600)
+	f, err := OpenFifo(context.Background(), filepath.Join(tmpdir, "f0"), syscall.O_RDONLY|syscall.O_NONBLOCK, 0o600)
 	assert.Exactly(t, nil, f)
 	assert.NotNil(t, err)
 
@@ -63,7 +63,7 @@ func TestFifoCancel(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 
-	f, err = OpenFifo(ctx, filepath.Join(tmpdir, "f0"), syscall.O_RDONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0600)
+	f, err = OpenFifo(ctx, filepath.Join(tmpdir, "f0"), syscall.O_RDONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0o600)
 	assert.NoError(t, err)
 
 	b := make([]byte, 32)
@@ -92,7 +92,7 @@ func TestFifoReadWrite(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	r, err := OpenFifo(ctx, filepath.Join(tmpdir, "f0"), syscall.O_RDONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0600)
+	r, err := OpenFifo(ctx, filepath.Join(tmpdir, "f0"), syscall.O_RDONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0o600)
 	assert.NoError(t, err)
 
 	w, err := OpenFifo(ctx, filepath.Join(tmpdir, "f0"), syscall.O_WRONLY|syscall.O_NONBLOCK, 0)
@@ -118,7 +118,7 @@ func TestFifoReadWrite(t *testing.T) {
 	ctx, cancel = context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	w, err = OpenFifo(ctx, filepath.Join(tmpdir, "f1"), syscall.O_CREAT|syscall.O_WRONLY|syscall.O_NONBLOCK, 0600)
+	w, err = OpenFifo(ctx, filepath.Join(tmpdir, "f1"), syscall.O_CREAT|syscall.O_WRONLY|syscall.O_NONBLOCK, 0o600)
 	assert.NoError(t, err)
 
 	written := make(chan struct{})
@@ -170,7 +170,7 @@ func TestFifoCancelOneSide(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	f, err := OpenFifo(ctx, filepath.Join(tmpdir, "f0"), syscall.O_RDONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0600)
+	f, err := OpenFifo(ctx, filepath.Join(tmpdir, "f0"), syscall.O_RDONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0o600)
 	assert.NoError(t, err)
 
 	read := make(chan struct{})
@@ -213,7 +213,7 @@ func TestFifoBlocking(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	f, err := OpenFifo(ctx, filepath.Join(tmpdir, "f0"), syscall.O_RDONLY|syscall.O_CREAT, 0600)
+	f, err := OpenFifo(ctx, filepath.Join(tmpdir, "f0"), syscall.O_RDONLY|syscall.O_CREAT, 0o600)
 	assert.Exactly(t, nil, f)
 	assert.EqualError(t, err, "context deadline exceeded")
 
@@ -233,7 +233,7 @@ func TestFifoBlocking(t *testing.T) {
 	var r io.ReadCloser
 	readerOpen := make(chan struct{})
 	go func() {
-		r, rerr = OpenFifo(ctx, filepath.Join(tmpdir, "f1"), syscall.O_RDONLY|syscall.O_CREAT, 0600)
+		r, rerr = OpenFifo(ctx, filepath.Join(tmpdir, "f1"), syscall.O_RDONLY|syscall.O_CREAT, 0o600)
 		close(readerOpen)
 	}()
 
@@ -281,7 +281,7 @@ func TestFifoORDWR(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	f, err := OpenFifo(ctx, filepath.Join(tmpdir, "f0"), syscall.O_RDWR|syscall.O_CREAT, 0600)
+	f, err := OpenFifo(ctx, filepath.Join(tmpdir, "f0"), syscall.O_RDWR|syscall.O_CREAT, 0o600)
 	assert.NoError(t, err)
 
 	_, err = f.Write([]byte("foobar"))
@@ -352,7 +352,7 @@ func TestFifoCloseError(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	w, err := OpenFifo(ctx, filepath.Join(tmpdir, t.Name()), syscall.O_WRONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0600)
+	w, err := OpenFifo(ctx, filepath.Join(tmpdir, t.Name()), syscall.O_WRONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0o600)
 	assert.NoError(t, err)
 	w.Close()
 
@@ -360,7 +360,7 @@ func TestFifoCloseError(t *testing.T) {
 	_, err = w.Write(data)
 	assert.Equal(t, ErrWriteClosed, err)
 
-	r, err := OpenFifo(ctx, filepath.Join(tmpdir, t.Name()), syscall.O_RDONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0600)
+	r, err := OpenFifo(ctx, filepath.Join(tmpdir, t.Name()), syscall.O_RDONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0o600)
 	assert.NoError(t, err)
 	r.Close()
 
@@ -377,7 +377,7 @@ func TestFifoCloseWhileReading(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	r, err := OpenFifo(ctx, filepath.Join(tmpdir, t.Name()), syscall.O_RDONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0600)
+	r, err := OpenFifo(ctx, filepath.Join(tmpdir, t.Name()), syscall.O_RDONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0o600)
 	assert.NoError(t, err)
 
 	read := make(chan struct{})
@@ -386,14 +386,12 @@ func TestFifoCloseWhileReading(t *testing.T) {
 	go func() {
 		buf := make([]byte, 32)
 		_, err := r.Read(buf)
-
 		if err != nil {
 			readErr <- err
 			return
 		}
 
 		close(read)
-
 	}()
 
 	time.Sleep(500 * time.Millisecond)
@@ -417,7 +415,7 @@ func TestFifoCloseWhileReadingAndWriting(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	r, err := OpenFifo(ctx, filepath.Join(tmpdir, t.Name()), syscall.O_RDONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0600)
+	r, err := OpenFifo(ctx, filepath.Join(tmpdir, t.Name()), syscall.O_RDONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0o600)
 	assert.NoError(t, err)
 
 	w, err := OpenFifo(ctx, filepath.Join(tmpdir, t.Name()), syscall.O_WRONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0)
@@ -430,7 +428,6 @@ func TestFifoCloseWhileReadingAndWriting(t *testing.T) {
 	go func() {
 		buf := make([]byte, 32)
 		_, err := r.Read(buf)
-
 		if err != nil {
 			readErr <- err
 			return
@@ -467,14 +464,14 @@ func TestFifoWrongRdWrError(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	r, err := OpenFifo(ctx, filepath.Join(tmpdir, t.Name()), syscall.O_RDONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0600)
+	r, err := OpenFifo(ctx, filepath.Join(tmpdir, t.Name()), syscall.O_RDONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0o600)
 	assert.NoError(t, err)
 
 	data := []byte("hello world!")
 	_, err = r.Write(data)
 	assert.Equal(t, ErrWrToRDONLY, err)
 
-	w, err := OpenFifo(ctx, filepath.Join(tmpdir, t.Name()), syscall.O_WRONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0600)
+	w, err := OpenFifo(ctx, filepath.Join(tmpdir, t.Name()), syscall.O_WRONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0o600)
 	assert.NoError(t, err)
 
 	buf := make([]byte, len(data))

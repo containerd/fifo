@@ -26,7 +26,7 @@ import (
 )
 
 //nolint:revive
-const O_PATH = 010000000
+const O_PATH = 0o10000000
 
 type handle struct {
 	f         *os.File
