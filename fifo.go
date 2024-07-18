@@ -30,6 +30,8 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+//try ci
+
 type fifo struct {
 	flag        int
 	opened      chan struct{}
