@@ -40,7 +40,7 @@ func TestRawReadWrite(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	r, err := OpenFifo(ctx, filepath.Join(tmpdir, t.Name()), syscall.O_RDONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0600)
+	r, err := OpenFifo(ctx, filepath.Join(tmpdir, t.Name()), syscall.O_RDONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0o600)
 	assert.NoError(t, err)
 	defer r.Close()
 	rawR := makeRawConn(t, r, false)
@@ -68,12 +68,12 @@ func TestRawWriteUserRead(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	w, err := OpenFifo(ctx, filepath.Join(tmpdir, t.Name()), syscall.O_WRONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0600)
+	w, err := OpenFifo(ctx, filepath.Join(tmpdir, t.Name()), syscall.O_WRONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0o600)
 	assert.NoError(t, err)
 	defer w.Close()
 	rawW := makeRawConn(t, w, false)
 
-	r, err := OpenFifo(ctx, filepath.Join(tmpdir, t.Name()), syscall.O_RDONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0600)
+	r, err := OpenFifo(ctx, filepath.Join(tmpdir, t.Name()), syscall.O_RDONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0o600)
 	assert.NoError(t, err)
 	defer r.Close()
 
@@ -95,11 +95,11 @@ func TestUserWriteRawRead(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	w, err := OpenFifo(ctx, filepath.Join(tmpdir, t.Name()), syscall.O_WRONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0600)
+	w, err := OpenFifo(ctx, filepath.Join(tmpdir, t.Name()), syscall.O_WRONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0o600)
 	assert.NoError(t, err)
 	defer w.Close()
 
-	r, err := OpenFifo(ctx, filepath.Join(tmpdir, t.Name()), syscall.O_RDONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0600)
+	r, err := OpenFifo(ctx, filepath.Join(tmpdir, t.Name()), syscall.O_RDONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0o600)
 	assert.NoError(t, err)
 	defer r.Close()
 	rawR := makeRawConn(t, r, false)
@@ -124,7 +124,7 @@ func TestRawCloseError(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		defer cancel()
 
-		f, err := OpenFifo(ctx, filepath.Join(tmpdir, path.Base(t.Name())), syscall.O_RDWR|syscall.O_CREAT, 0600)
+		f, err := OpenFifo(ctx, filepath.Join(tmpdir, path.Base(t.Name())), syscall.O_RDWR|syscall.O_CREAT, 0o600)
 		assert.NoError(t, err)
 
 		f.Close()
@@ -135,7 +135,7 @@ func TestRawCloseError(t *testing.T) {
 	t.Run("RawOpsAfterClose", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		defer cancel()
-		f, err := OpenFifo(ctx, filepath.Join(tmpdir, path.Base(t.Name())), syscall.O_RDWR|syscall.O_CREAT, 0600)
+		f, err := OpenFifo(ctx, filepath.Join(tmpdir, path.Base(t.Name())), syscall.O_RDWR|syscall.O_CREAT, 0o600)
 		assert.NoError(t, err)
 		defer f.Close()
 
@@ -153,7 +153,7 @@ func TestRawCloseError(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		defer cancel()
 		dummy := func(uintptr) bool { return true }
-		r, err := OpenFifo(ctx, filepath.Join(tmpdir, path.Base(t.Name())), syscall.O_RDONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0600)
+		r, err := OpenFifo(ctx, filepath.Join(tmpdir, path.Base(t.Name())), syscall.O_RDONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0o600)
 		assert.NoError(t, err)
 		defer r.Close()
 		rawR := makeRawConn(t, r, false)
@@ -162,7 +162,7 @@ func TestRawCloseError(t *testing.T) {
 		assert.Equal(t, ErrCtrlClosed, rawR.Control(func(uintptr) {}))
 		assert.Equal(t, ErrReadClosed, rawR.Read(dummy))
 
-		w, err := OpenFifo(ctx, filepath.Join(tmpdir, path.Base(t.Name())), syscall.O_WRONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0600)
+		w, err := OpenFifo(ctx, filepath.Join(tmpdir, path.Base(t.Name())), syscall.O_WRONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0o600)
 		assert.NoError(t, err)
 		defer w.Close()
 		rawW := makeRawConn(t, w, false)
@@ -181,14 +181,14 @@ func TestRawWrongRdWrError(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 	dummy := func(uintptr) bool { return true }
-	r, err := OpenFifo(ctx, filepath.Join(tmpdir, path.Base(t.Name())), syscall.O_RDONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0600)
+	r, err := OpenFifo(ctx, filepath.Join(tmpdir, path.Base(t.Name())), syscall.O_RDONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0o600)
 	assert.NoError(t, err)
 	defer r.Close()
 	rawR := makeRawConn(t, r, false)
 
 	assert.Equal(t, ErrWrToRDONLY, rawR.Write(dummy))
 
-	w, err := OpenFifo(ctx, filepath.Join(tmpdir, path.Base(t.Name())), syscall.O_WRONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0600)
+	w, err := OpenFifo(ctx, filepath.Join(tmpdir, path.Base(t.Name())), syscall.O_WRONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0o600)
 	assert.NoError(t, err)
 	defer w.Close()
 	rawW := makeRawConn(t, w, false)

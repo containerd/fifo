@@ -32,5 +32,3 @@ linters-settings:
 
 run:
   timeout: 3m
-  skip-dirs:
-    - vendor

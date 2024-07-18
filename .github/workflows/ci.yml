@@ -14,16 +14,16 @@ jobs:
     timeout-minutes: 5
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
-        path: src/github.com/containerd/fifo
+        path: src/github.com/containerd/fifo # project-checks depends on GOPATH mode
         fetch-depth: 25
-    - uses: actions/setup-go@v3
+    - uses: actions/setup-go@v5
       with:
-        go-version: 1.20.x
+        go-version: 1.22.x
     - uses: containerd/project-checks@v1.1.0
       with:
-        working-directory: src/github.com/containerd/fifo
+        working-directory: src/github.com/containerd/fifo # project-checks depends on GOPATH mode
 
   linters:
     name: Linters
@@ -32,38 +32,38 @@ jobs:
 
     strategy:
       matrix:
-        go-version: [1.20.x]
-        os: [ubuntu-22.04, macos-12, windows-2022]
+        go-version: [1.22.x]
+        os: [ubuntu-22.04, macos-14, windows-2022]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
         with:
-          path: src/github.com/containerd/fifo
+          go-version: ${{ matrix.go-version }}
 
       - name: Set env
         shell: bash
         run: |
-          echo "GOPATH=${{ github.workspace }}" >> $GITHUB_ENV
           echo "${{ github.workspace }}/bin" >> $GITHUB_PATH
 
-      - uses: golangci/golangci-lint-action@v3
+      - uses: golangci/golangci-lint-action@v6
         with:
-          version: v1.51.1
-          working-directory: src/github.com/containerd/fifo
+          version: v1.59.1
 
   tests:
     name: Tests
-    runs-on: ubuntu-22.04
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 5
 
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          path: src/github.com/containerd/fifo
+    strategy:
+      matrix:
+        go-version: [1.20.x, 1.22.x]
+        os: [ubuntu-22.04]
 
-      - uses: actions/setup-go@v3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
         with:
-          go-version: 1.20.x
+          go-version: ${{ matrix.go-version }}
 
       - run: make test
-        working-directory: src/github.com/containerd/fifo

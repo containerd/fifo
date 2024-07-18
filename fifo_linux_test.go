@@ -43,7 +43,7 @@ func TestFifoCloseAfterRm(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	f, err := OpenFifo(ctx, filepath.Join(tmpdir, "f0"), syscall.O_RDONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0600)
+	f, err := OpenFifo(ctx, filepath.Join(tmpdir, "f0"), syscall.O_RDONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0o600)
 	assert.NoError(t, err)
 
 	err = os.RemoveAll(filepath.Join(tmpdir, "f0"))
@@ -80,7 +80,7 @@ func TestFifoCloseAfterRm(t *testing.T) {
 
 	cerr = make(chan error)
 	go func() {
-		_, err = OpenFifo(ctx, filepath.Join(tmpdir, "f1"), syscall.O_WRONLY|syscall.O_CREAT, 0600)
+		_, err = OpenFifo(ctx, filepath.Join(tmpdir, "f1"), syscall.O_WRONLY|syscall.O_CREAT, 0o600)
 		cerr <- err
 	}()
 
