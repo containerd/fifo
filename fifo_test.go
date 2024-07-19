@@ -22,6 +22,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sync"
@@ -427,12 +428,12 @@ func TestFifoCloseWhileReadingAndWriting(t *testing.T) {
 
 	go func() {
 		buf := make([]byte, 32)
-		_, err := r.Read(buf)
+		size, err := r.Read(buf)
 		if err != nil {
 			readErr <- err
 			return
 		}
-
+		t.Log(string(buf[:size]))
 		close(read)
 	}()
 
@@ -493,4 +494,39 @@ func checkWgDone(wg *sync.WaitGroup) error {
 	case <-ctx.Done():
 		return ctx.Err()
 	}
+}
+
+func TestFifoResize(t *testing.T) {
+	tmpdir, err := ioutil.TempDir("", "fifos")
+	assert.NoError(t, err)
+	defer os.RemoveAll(tmpdir)
+
+	leakCheckWg = &sync.WaitGroup{}
+	defer func() {
+		leakCheckWg = nil
+	}()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	r, err := OpenFifo(ctx, filepath.Join(tmpdir, t.Name()), syscall.O_RDONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0o600)
+	assert.NoError(t, err)
+
+	w, err := OpenFifo(ctx, filepath.Join(tmpdir, t.Name()), syscall.O_WRONLY|syscall.O_CREAT|syscall.O_NONBLOCK, 0o600)
+	assert.NoError(t, err)
+
+	size := fifoSize
+	bytes := make([]byte, size)
+	for i := 0; i < size; i++ {
+		bytes[i] = byte(i % 256)
+	}
+
+	_, err = w.Write(bytes)
+	assert.NoError(t, err)
+
+	time.Sleep(1 * time.Second)
+	b := make([]byte, size)
+	_, err = r.Read(b[:size])
+	assert.NoError(t, err)
+	assert.Equal(t, b[:size], bytes)
 }
