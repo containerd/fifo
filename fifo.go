@@ -135,6 +135,7 @@ func openFifo(ctx context.Context, fn string, flag int, perm os.FileMode) (*fifo
 	go func() {
 		if wg != nil {
 			defer wg.Done()
+			runtime.LockOSThread()
 		}
 		var file *os.File
 		fn, err := h.Path()
