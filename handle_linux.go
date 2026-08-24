@@ -23,10 +23,12 @@ import (
 	"os"
 	"sync"
 	"syscall"
+
+	"golang.org/x/sys/unix"
 )
 
 //nolint:revive
-const O_PATH = 0o10000000
+const O_PATH = unix.O_PATH
 
 type handle struct {
 	f         *os.File
