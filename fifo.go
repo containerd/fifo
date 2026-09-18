@@ -95,6 +95,7 @@ func openFifo(ctx context.Context, fn string, flag int, perm os.FileMode) (*fifo
 	}
 
 	block := flag&syscall.O_NONBLOCK == 0 || flag&syscall.O_RDWR != 0
+	nonblockRequested := flag&syscall.O_NONBLOCK != 0
 
 	flag &= ^syscall.O_CREAT
 	flag &= ^syscall.O_NONBLOCK
@@ -139,7 +140,7 @@ func openFifo(ctx context.Context, fn string, flag int, perm os.FileMode) (*fifo
 		var file *os.File
 		fn, err := h.Path()
 		if err == nil {
-			file, err = os.OpenFile(fn, flag, 0)
+			file, err = openFifoFile(fn, flag, nonblockRequested)
 		}
 		select {
 		case <-f.closing:

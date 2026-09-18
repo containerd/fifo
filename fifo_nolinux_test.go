@@ -94,3 +94,61 @@ func TestFifoCloseAfterRm(t *testing.T) {
 		t.Fatal("open should have been unblocked")
 	}
 }
+
+// TestFifoRDWRCloseWhileReading guards against closing an O_RDWR fifo
+// must unblock a concurrent, already-blocked Read. On Darwin, os.OpenFile
+// leaves fifo descriptors off the runtime poller (see golang/go#24164),
+// so without openFifoFile's O_RDWR-specific workaround, Close's underlying
+// file.Close() would never interrupt the blocked read(2) syscall and this
+// will hang instead of failing fast.
+func TestFifoRDWRCloseWhileReading(t *testing.T) {
+	tmpdir, err := os.MkdirTemp("", "fifos")
+	assert.NoError(t, err)
+	defer os.RemoveAll(tmpdir)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	fn := filepath.Join(tmpdir, t.Name())
+
+	rw, err := OpenFifo(ctx, fn, syscall.O_RDWR|syscall.O_CREAT|syscall.O_NONBLOCK, 0o600)
+	assert.NoError(t, err)
+
+	// A second, independent writer keeps the pipe from ever reaching EOF on its own,
+	// so any unblocking of the reader below can only come from Close().
+	w, err := OpenFifo(ctx, fn, syscall.O_WRONLY|syscall.O_NONBLOCK, 0)
+	assert.NoError(t, err)
+	defer w.Close()
+
+	read := make(chan error, 1)
+	go func() {
+		buf := make([]byte, 32)
+		_, err := rw.Read(buf)
+		read <- err
+	}()
+
+	select {
+	case err := <-read:
+		t.Fatalf("read should have blocked, but got %v", err)
+	case <-time.After(500 * time.Millisecond):
+	}
+
+	closeErr := make(chan error, 1)
+	go func() {
+		closeErr <- rw.Close()
+	}()
+
+	select {
+	case err := <-closeErr:
+		assert.NoError(t, err)
+	case <-time.After(2 * time.Second):
+		t.Fatal("Close should not block")
+	}
+
+	select {
+	case err := <-read:
+		assert.Error(t, err)
+	case <-time.After(2 * time.Second):
+		t.Fatal("Read should have unblocked after Close")
+	}
+}
