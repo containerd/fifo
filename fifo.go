@@ -42,6 +42,13 @@ type fifo struct {
 	handle      *handle
 }
 
+// Sizes here match what's defined in the kernel; see https://github.com/torvalds/linux/commit/ff9da691c0498ff81fdd014e7a0731dab2337dac
+const (
+	fsetPipeSize = 1031        // F_SETPIPE_SZ
+	fgetPipeSize = 1032        // F_GETPIPE_SZ
+	fifoSize     = 1024 * 1024 // FIFO_SIZE
+)
+
 var leakCheckWg *sync.WaitGroup
 
 // OpenFifoDup2 is same as OpenFifo, but additionally creates a copy of the FIFO file descriptor with dup2 syscall.
@@ -163,6 +170,8 @@ func openFifo(ctx context.Context, fn string, flag int, perm os.FileMode) (*fifo
 			})
 			return
 		}
+		// Resize fifo to 1024K
+		unix.FcntlInt(file.Fd(), fsetPipeSize, 1024*1024)
 		f.file = file
 		close(f.opened)
 	}()
