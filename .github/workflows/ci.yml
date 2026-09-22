@@ -58,7 +58,7 @@ jobs:
     strategy:
       matrix:
         go-version: [oldstable, stable]
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, windows-latest]
 
     steps:
       - uses: actions/checkout@v4
