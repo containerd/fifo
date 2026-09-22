@@ -23,10 +23,9 @@ import (
 	"os"
 	"sync"
 	"syscall"
-)
 
-//nolint:revive
-const O_PATH = 0o10000000
+	"golang.org/x/sys/unix"
+)
 
 type handle struct {
 	f         *os.File
@@ -38,7 +37,7 @@ type handle struct {
 }
 
 func getHandle(fn string) (*handle, error) {
-	f, err := os.OpenFile(fn, O_PATH, 0)
+	f, err := os.OpenFile(fn, unix.O_PATH, 0)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open %v with O_PATH: %w", fn, err)
 	}
