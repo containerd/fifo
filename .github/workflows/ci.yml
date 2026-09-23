@@ -32,7 +32,7 @@ jobs:
 
     strategy:
       matrix:
-        go-version: [1.22.x]
+        go-version: [stable]
         os: [ubuntu-22.04, macos-14, windows-2022]
 
     steps:
@@ -46,9 +46,9 @@ jobs:
         run: |
           echo "${{ github.workspace }}/bin" >> $GITHUB_PATH
 
-      - uses: golangci/golangci-lint-action@v6
+      - uses: golangci/golangci-lint-action@v9
         with:
-          version: v1.59.1
+          version: v2.13.2
 
   tests:
     name: Tests
@@ -57,7 +57,7 @@ jobs:
 
     strategy:
       matrix:
-        go-version: [1.20.x, 1.22.x]
+        go-version: [oldstable, stable]
         os: [ubuntu-22.04]
 
     steps:
