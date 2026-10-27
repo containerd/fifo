@@ -1,6 +1,6 @@
 module github.com/containerd/fifo
 
-go 1.18
+go 1.19
 
 require (
 	github.com/stretchr/testify v1.12.1

@@ -44,8 +44,7 @@ type fifo struct {
 
 	// readClosing is set by Close before it interrupts a blocked Read (see
 	// interruptRead); a Read returning after that drops what it read.
-	// Accessed atomically; int32 rather than atomic.Bool for Go 1.18.
-	readClosing int32
+	readClosing atomic.Bool
 }
 
 var leakCheckWg *sync.WaitGroup
@@ -213,7 +212,7 @@ func (f *fifo) Read(b []byte) (int, error) {
 // would otherwise return data, possibly including the interrupt byte.
 func (f *fifo) read(b []byte) (int, error) {
 	n, err := f.file.Read(b)
-	if atomic.LoadInt32(&f.readClosing) != 0 {
+	if f.readClosing.Load() {
 		return 0, ErrReadClosed
 	}
 	return n, err
