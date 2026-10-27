@@ -18,6 +18,14 @@ Go package for handling fifos in a sane way.
 // - syscall.O_NONBLOCK - return io.ReadWriteCloser even if other side of the
 //     fifo isn't open. read/write will be connected after the actual fifo is
 //     open or after fifo is closed.
+//
+// On darwin, open readers with O_RDWR and writers with O_WRONLY: Close of an
+// O_RDWR fifo writes one byte into the fifo to interrupt a blocked Read, and
+// other readers of the fifo may receive that byte. A Read that returns after
+// Close starts discards what it read, which may include that byte, and
+// returns ErrReadClosed. An O_RDWR reader is its own writer: its open doesn't
+// block, and it keeps reading, without EOF, while writers close and reopen the
+// fifo.
 func OpenFifo(ctx context.Context, fn string, flag int, perm os.FileMode) (io.ReadWriteCloser, error)
 
 

@@ -24,6 +24,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sync"
 	"syscall"
 	"testing"
@@ -269,6 +270,12 @@ func TestFifoBlocking(t *testing.T) {
 }
 
 func TestFifoORDWR(t *testing.T) {
+	if runtime.GOOS == "darwin" {
+		// Closing f writes a byte into the fifo, which r2 would read instead
+		// of EOF; see OpenFifo and TestFifoORDWRReader.
+		t.Skip("writing through O_RDWR is unsupported on darwin")
+	}
+
 	tmpdir, err := os.MkdirTemp("", "fifos")
 	assert.NoError(t, err)
 	defer os.RemoveAll(tmpdir)
