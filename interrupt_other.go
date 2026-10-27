@@ -18,9 +18,6 @@
 
 package fifo
 
-import "os"
-
-// openFifoFile opens fn for the fifo data path.
-func openFifoFile(fn string, flag int, _ bool) (*os.File, error) {
-	return os.OpenFile(fn, flag, 0)
-}
+// interruptRead is a no-op: Close interrupts a blocked Read through the
+// runtime poller.
+func interruptRead(*fifo) {}

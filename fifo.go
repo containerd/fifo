@@ -25,6 +25,7 @@ import (
 	"os"
 	"runtime"
 	"sync"
+	"sync/atomic"
 	"syscall"
 
 	"golang.org/x/sys/unix"
@@ -40,6 +41,11 @@ type fifo struct {
 	closingOnce sync.Once // close has been called
 	closedOnce  sync.Once // fifo is closed
 	handle      *handle
+
+	// readClosing is set by Close before it interrupts a blocked Read (see
+	// interruptRead); a Read returning after that drops what it read.
+	// Accessed atomically; int32 rather than atomic.Bool for Go 1.18.
+	readClosing int32
 }
 
 var leakCheckWg *sync.WaitGroup
@@ -69,6 +75,14 @@ func OpenFifoDup2(ctx context.Context, fn string, flag int, perm os.FileMode, fd
 //   - syscall.O_NONBLOCK - return io.ReadWriteCloser even if other side of the
 //     fifo isn't open. read/write will be connected after the actual fifo is
 //     open or after fifo is closed.
+//
+// On darwin, open readers with O_RDWR and writers with O_WRONLY: Close of an
+// O_RDWR fifo writes one byte into the fifo to interrupt a blocked Read, and
+// other readers of the fifo may receive that byte. A Read that returns after
+// Close starts discards what it read, which may include that byte, and
+// returns ErrReadClosed. An O_RDWR reader is its own writer: its open doesn't
+// block, and it keeps reading, without EOF, while writers close and reopen the
+// fifo.
 func OpenFifo(ctx context.Context, fn string, flag int, perm os.FileMode) (io.ReadWriteCloser, error) {
 	fifo, err := openFifo(ctx, fn, flag, perm)
 	if fifo == nil {
@@ -95,7 +109,6 @@ func openFifo(ctx context.Context, fn string, flag int, perm os.FileMode) (*fifo
 	}
 
 	block := flag&syscall.O_NONBLOCK == 0 || flag&syscall.O_RDWR != 0
-	nonblockRequested := flag&syscall.O_NONBLOCK != 0
 
 	flag &= ^syscall.O_CREAT
 	flag &= ^syscall.O_NONBLOCK
@@ -140,7 +153,7 @@ func openFifo(ctx context.Context, fn string, flag int, perm os.FileMode) (*fifo
 		var file *os.File
 		fn, err := h.Path()
 		if err == nil {
-			file, err = openFifoFile(fn, flag, nonblockRequested)
+			file, err = os.OpenFile(fn, flag, 0)
 		}
 		select {
 		case <-f.closing:
@@ -184,15 +197,26 @@ func (f *fifo) Read(b []byte) (int, error) {
 	}
 	select {
 	case <-f.opened:
-		return f.file.Read(b)
+		return f.read(b)
 	default:
 	}
 	select {
 	case <-f.opened:
-		return f.file.Read(b)
+		return f.read(b)
 	case <-f.closed:
 		return 0, ErrReadClosed
 	}
+}
+
+// read checks readClosing after read(2) returns: Go's poll.FD.Read doesn't
+// re-check for Close after the syscall, so a read woken by interruptRead
+// would otherwise return data, possibly including the interrupt byte.
+func (f *fifo) read(b []byte) (int, error) {
+	n, err := f.file.Read(b)
+	if atomic.LoadInt32(&f.readClosing) != 0 {
+		return 0, ErrReadClosed
+	}
+	return n, err
 }
 
 // Write from byte array to a fifo.
@@ -229,6 +253,13 @@ func (f *fifo) Close() (retErr error) {
 			select {
 			case <-f.opened:
 				f.closedOnce.Do(func() {
+					// Before file.Close: once Close starts, os.File refuses
+					// I/O, so the poke would fail and the Read would stay
+					// blocked. file.Close doesn't wait for the Read: with
+					// the fd off the poller, it returns without calling
+					// close(2), and the Read calls close(2) once read(2)
+					// returns.
+					interruptRead(f)
 					retErr = f.file.Close()
 					f.err = retErr
 					close(f.closed)

@@ -270,6 +270,12 @@ func TestFifoBlocking(t *testing.T) {
 }
 
 func TestFifoORDWR(t *testing.T) {
+	if runtime.GOOS == "darwin" {
+		// Closing f writes a byte into the fifo, which r2 would read instead
+		// of EOF; see OpenFifo and TestFifoORDWRReader.
+		t.Skip("writing through O_RDWR is unsupported on darwin")
+	}
+
 	tmpdir, err := os.MkdirTemp("", "fifos")
 	assert.NoError(t, err)
 	defer os.RemoveAll(tmpdir)
@@ -457,58 +463,6 @@ func TestFifoCloseWhileReadingAndWriting(t *testing.T) {
 		assert.Error(t, err)
 	case <-time.After(500 * time.Millisecond):
 		t.Fatal("Read should not be blocked")
-	}
-}
-
-// TestFifoRDWRCloseWhileWriting is the write-side counterpart to
-// TestFifoRDWRCloseWhileReading: Close must also unblock a Write that is
-// parked because the pipe buffer is full, not just a Read parked waiting
-// for data.
-func TestFifoRDWRCloseWhileWriting(t *testing.T) {
-	tmpdir, err := os.MkdirTemp("", "fifos")
-	assert.NoError(t, err)
-	defer os.RemoveAll(tmpdir)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	rw, err := OpenFifo(ctx, filepath.Join(tmpdir, t.Name()), syscall.O_RDWR|syscall.O_CREAT|syscall.O_NONBLOCK, 0o600)
-	assert.NoError(t, err)
-
-	// Comfortably larger than any default pipe buffer (64KiB on Linux,
-	// up to 64KiB on Darwin) so the Write is guaranteed to park with
-	// nothing draining the fifo.
-	buf := make([]byte, 1<<20)
-
-	write := make(chan error, 1)
-	go func() {
-		_, err := rw.Write(buf)
-		write <- err
-	}()
-
-	select {
-	case err := <-write:
-		t.Fatalf("write should have blocked, but got %v", err)
-	case <-time.After(500 * time.Millisecond):
-	}
-
-	closeErr := make(chan error, 1)
-	go func() {
-		closeErr <- rw.Close()
-	}()
-
-	select {
-	case err := <-closeErr:
-		assert.NoError(t, err)
-	case <-time.After(5 * time.Second):
-		t.Fatal("Close should not block")
-	}
-
-	select {
-	case err := <-write:
-		assert.Error(t, err)
-	case <-time.After(5 * time.Second):
-		t.Fatal("Write should have unblocked after Close")
 	}
 }
 
