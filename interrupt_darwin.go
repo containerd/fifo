@@ -19,7 +19,6 @@
 package fifo
 
 import (
-	"sync/atomic"
 	"syscall"
 
 	"golang.org/x/sys/unix"
@@ -42,7 +41,7 @@ func interruptRead(f *fifo) {
 	if f.flag&syscall.O_RDWR == 0 {
 		return
 	}
-	atomic.StoreInt32(&f.readClosing, 1)
+	f.readClosing.Store(true)
 
 	// SyscallConn, not Fd: Fd puts the file back in blocking mode.
 	rc, err := f.file.SyscallConn()
